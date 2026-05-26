@@ -1,0 +1,10 @@
+SELECT Id,
+       CronTriggerId,
+       JobType,
+       ApexClass.Name,
+       Status,
+       CronTrigger.CronJobDetail.Name
+FROM AsyncApexJob
+WHERE Status IN ('Queued', 'Holding', 'Preparing')
+  AND ApexClass.Name LIKE '<TargetClassName>'
+LIMIT 200

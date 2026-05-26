@@ -1,0 +1,164 @@
+[
+  {
+    "type": "bundle",
+    "name": "Stuck Apex Job Cleaner",
+    "path": "scripts/apex-jobs/stuck-apex-job-cleaner",
+    "description": "Identifies and aborts Apex jobs stuck in Queued, Holding, or Preparing status for a given class name.",
+    "tags": [
+      "apex",
+      "async",
+      "jobs",
+      "scheduler",
+      "cleanup",
+      "maintenance"
+    ],
+    "modified": "2026-05-26T16:15:23.295Z",
+    "steps": [
+      {
+        "file": "1_verify_stuck_jobs.soql",
+        "label": "1. Verify Stuck Jobs",
+        "note": "Replace <TargetClassName> with the Apex class name to target. Review the results before aborting — confirm the job count and types look correct.",
+        "extension": "soql",
+        "content": "SELECT Id,\n       CronTriggerId,\n       JobType,\n       ApexClass.Name,\n       Status,\n       CronTrigger.CronJobDetail.Name\nFROM AsyncApexJob\nWHERE Status IN ('Queued', 'Holding', 'Preparing')\n  AND ApexClass.Name LIKE '<TargetClassName>'\nLIMIT 200\n",
+        "size": 250,
+        "modified": "2026-05-26T16:15:23.294Z"
+      },
+      {
+        "file": "2_abort_stuck_jobs.cls",
+        "label": "2. Abort Jobs (Anonymous Apex)",
+        "note": "Replace <TargetClassName> with the same class name used in step 1. Supports LIKE wildcards (e.g. '%MyClass%'). Run in Anonymous Apex and check debug logs for any abort failures.",
+        "extension": "cls",
+        "content": "// Replace <TargetClassName> with the Apex class name to target (supports LIKE wildcards).\nString targetClassName = '<TargetClassName>';\n\nList<AsyncApexJob> waitingJobs = [\n    SELECT Id, CronTriggerId, JobType, ApexClass.Name\n    FROM AsyncApexJob\n    WHERE Status IN ('Queued', 'Holding', 'Preparing')\n      AND ApexClass.Name LIKE :targetClassName\n    LIMIT 200\n];\n\nfor (AsyncApexJob job : waitingJobs) {\n    try {\n        if (job.JobType == 'ScheduledApex') {\n            if (job.CronTriggerId != null) {\n                System.abortJob(job.CronTriggerId);\n            }\n        } else {\n            System.abortJob(job.Id);\n        }\n    } catch (Exception e) {\n        System.debug(LoggingLevel.ERROR, 'Failed to abort Job ' + job.Id + ' for class ' + job.ApexClass.Name + ': ' + e.getMessage());\n    }\n}\n",
+        "size": 811,
+        "modified": "2026-05-26T16:15:23.295Z"
+      }
+    ]
+  },
+  {
+    "type": "bundle",
+    "name": "Flow Version Cleaner",
+    "path": "scripts/flows/flow-version-cleaner",
+    "description": "Removes old inactive flow versions across all unmanaged flows, keeping a configurable number of the most recent versions.",
+    "tags": [
+      "apex",
+      "flows",
+      "cleanup",
+      "maintenance",
+      "flow-version"
+    ],
+    "modified": "2026-05-26T16:15:23.295Z",
+    "steps": [
+      {
+        "file": "FlowVersionCleaner.cls",
+        "label": "1. Apex Class",
+        "note": "Deploy this class to the org first via VS Code or the Developer Console before running step 2.",
+        "extension": "cls",
+        "content": "public class FlowVersionCleaner {\n\n    public static void cleanOldFlowVersions(Integer versionsToKeep) {\n        if (versionsToKeep < 1 || versionsToKeep > 10) {\n            throw new IllegalArgumentException('Please keep between 1 and 10 versions.');\n        }\n\n        // Get all flow definitions\n        List<FlowDefinition> allFlowDefs = [\n            SELECT Id, DeveloperName\n            FROM FlowDefinition\n            WHERE ManageableState = 'unmanaged'\n        ];\n\n        List<Flow> flowsToDelete = new List<Flow>();\n\n        for (FlowDefinition def : allFlowDefs) {\n            List<FlowVersionView> versions = [\n                SELECT Id, Status, VersionNumber, DefinitionId\n                FROM FlowVersionView\n                WHERE DefinitionId = :def.Id\n                ORDER BY VersionNumber DESC\n            ];\n\n            // Retain the top X versions, skip active versions in the remainder\n            List<FlowVersionView> oldVersions = versions.size() > versionsToKeep\n                ? versions.subList(versionsToKeep, versions.size())\n                : new List<FlowVersionView>();\n\n            for (FlowVersionView oldVersion : oldVersions) {\n                if (oldVersion.Status != 'Active') {\n                    flowsToDelete.add(new Flow(Id = oldVersion.Id));\n                }\n            }\n        }\n\n        if (!flowsToDelete.isEmpty()) {\n            try {\n                delete flowsToDelete;\n                System.debug('Deleted ' + flowsToDelete.size() + ' old flow versions.');\n            } catch (Exception e) {\n                System.debug('Error deleting flows: ' + e.getMessage());\n            }\n        } else {\n            System.debug('No flow versions to delete.');\n        }\n    }\n}\n",
+        "size": 1731,
+        "modified": "2026-05-26T16:15:23.295Z"
+      },
+      {
+        "file": "RunFlowVersionCleaner.cls",
+        "label": "2. Run (Anonymous Apex)",
+        "note": "Execute in Anonymous Apex. Change the argument to the number of versions to retain (1–10). Check debug logs to confirm how many versions were deleted.",
+        "extension": "cls",
+        "content": "// Anonymous Apex — deploy FlowVersionCleaner to org before running.\n// Change the argument to the number of recent versions you want to retain (1–10).\nFlowVersionCleaner.cleanOldFlowVersions(3);\n",
+        "size": 200,
+        "modified": "2026-05-26T16:15:23.295Z"
+      }
+    ]
+  },
+  {
+    "type": "bundle",
+    "name": "Install a Package into an Org",
+    "path": "scripts/package-management/install-package",
+    "description": "Retrieve installed packages to find the 04t Package Version ID, then reinstall via CLI or browser URL.",
+    "tags": [
+      "cli",
+      "package",
+      "install",
+      "sf-cli",
+      "sandbox"
+    ],
+    "modified": "2026-05-26T16:15:23.295Z",
+    "steps": [
+      {
+        "file": "1_list_installed_packages.sh",
+        "label": "1. List Installed Packages",
+        "note": "Replace <OrgAlias> with your org alias (e.g. my-sandbox). This outputs a table of all installed packages — look for the Package Version ID column, which starts with 04t.",
+        "extension": "sh",
+        "content": "sf package installed list --target-org <OrgAlias>\n",
+        "size": 50,
+        "modified": "2026-05-26T16:15:23.295Z"
+      },
+      {
+        "file": "2_install_package_cli.sh",
+        "label": "2. Install via CLI",
+        "note": "Replace <PackageVersionId> with the 04t ID from step 1 and <OrgAlias> with your org alias. The --apex-compile package flag is important — it prevents compile errors that occur when using the default 'all' setting.",
+        "extension": "sh",
+        "content": "sf package install --package <PackageVersionId> --target-org <OrgAlias> --apex-compile package --wait 10\n",
+        "size": 105,
+        "modified": "2026-05-26T16:15:23.295Z"
+      },
+      {
+        "file": "3_install_package_url.txt",
+        "label": "3. Install via Browser URL",
+        "note": "Alternative to the CLI. Paste this path after your org's .com/ in the browser. Replace <PackageVersionId> with the 04t ID. IMPORTANT: under Advanced Settings, make sure Apex Compile is set to 'Package only' — this is the browser equivalent of --apex-compile package and resolves compile errors on install.",
+        "extension": "txt",
+        "content": "packaging/installPackage.apexp?p0=<PackageVersionId>\n",
+        "size": 53,
+        "modified": "2026-05-26T16:15:23.295Z"
+      }
+    ]
+  },
+  {
+    "type": "file",
+    "name": "find-user-stories-by-component.soql",
+    "path": "scripts/copado/find-user-stories-by-component.soql",
+    "extension": "soql",
+    "content": "SELECT copado__User_Story__r.Id,\n       copado__User_Story__r.Name,\n       copado__User_Story__r.copado__Environment__r.Name,\n       copado__User_Story__r.copado__Latest_Commit_Date__c\nFROM copado__User_Story_Metadata__c\nWHERE copado__Metadata_API_Name__c LIKE '%<MetadataAPIName>%'\n  AND copado__User_Story__r.RecordType.Name != 'Utility'\n",
+    "size": 340,
+    "modified": "2026-05-26T16:15:23.295Z",
+    "tags": [
+      "soql",
+      "copado",
+      "user-story",
+      "metadata"
+    ],
+    "description": "Find all Copado user stories that include a given component by its metadata API name"
+  },
+  {
+    "type": "file",
+    "name": "promotion-user-story-progress.soql",
+    "path": "scripts/copado/promotion-user-story-progress.soql",
+    "extension": "soql",
+    "content": "SELECT copado__User_Story__r.Name,\n       copado__User_Story__r.copado__Latest_Commit_Date__c\nFROM copado__Promoted_User_Story__c\nWHERE copado__Promotion__r.Name = '<PromotionName>'\nORDER BY copado__User_Story__r.copado__Latest_Commit_Date__c ASC\n",
+    "size": 247,
+    "modified": "2026-05-26T16:15:23.295Z",
+    "tags": [
+      "soql",
+      "copado",
+      "promotion",
+      "merge-conflict",
+      "user-story"
+    ],
+    "description": "Lists user stories in a promotion ordered by commit date — use to track progress through merge conflicts"
+  },
+  {
+    "type": "file",
+    "name": "reset-user-permissions.cls",
+    "path": "scripts/user-management/reset-user-permissions.cls",
+    "extension": "cls",
+    "content": "// Removes all permission set assignments (non-profile) from the specified users,\n// reassigns them to a reduced-access profile, then assigns a single permission set group.\n// Update the three ID variables before running in Anonymous Apex.\n\nList<Id> userIds = new List<Id>{\n    '<userid>','<userid>','<userid>'\n};\n\nId profileId      = '<profile id to be assigned>';\nId permSetGroupId = '<permission set group id to be assigned>';\n\n// Step 1: delete all non-profile permission set assignments for these users\nList<PermissionSetAssignment> toDelete = [\n    SELECT Id, PermissionSet.IsOwnedByProfile\n    FROM PermissionSetAssignment\n    WHERE AssigneeId IN :userIds\n];\n\nList<PermissionSetAssignment> safeToDelete = new List<PermissionSetAssignment>();\nfor (PermissionSetAssignment psa : toDelete) {\n    if (!psa.PermissionSet.IsOwnedByProfile) {\n        safeToDelete.add(psa);\n    }\n}\ndelete safeToDelete;\n\n// Step 2: reassign users to the reduced-access profile\nList<User> usersToUpdate = [SELECT Id, ProfileId FROM User WHERE Id IN :userIds];\nfor (User u : usersToUpdate) {\n    u.ProfileId = profileId;\n}\nupdate usersToUpdate;\n\n// Step 3: assign the reduced-access permission set group\nList<PermissionSetAssignment> toInsert = new List<PermissionSetAssignment>();\nfor (Id uid : userIds) {\n    toInsert.add(new PermissionSetAssignment(\n        AssigneeId          = uid,\n        PermissionSetGroupId = permSetGroupId\n    ));\n}\ninsert toInsert;\n",
+    "size": 1442,
+    "modified": "2026-05-26T16:15:23.295Z",
+    "tags": [
+      "apex",
+      "user-management",
+      "permissions",
+      "profile",
+      "permission-set-group"
+    ],
+    "description": "Strips all permission set assignments from specified users, reassigns them to a reduced-access profile, then grants a single permission set group"
+  }
+]

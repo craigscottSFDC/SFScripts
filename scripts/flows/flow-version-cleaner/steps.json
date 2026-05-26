@@ -1,0 +1,17 @@
+{
+  "title": "Flow Version Cleaner",
+  "description": "Removes old inactive flow versions across all unmanaged flows, keeping a configurable number of the most recent versions.",
+  "tags": ["apex", "flows", "cleanup", "maintenance", "flow-version"],
+  "steps": [
+    {
+      "file": "FlowVersionCleaner.cls",
+      "label": "1. Apex Class",
+      "note": "Deploy this class to the org first via VS Code or the Developer Console before running step 2."
+    },
+    {
+      "file": "RunFlowVersionCleaner.cls",
+      "label": "2. Run (Anonymous Apex)",
+      "note": "Execute in Anonymous Apex. Change the argument to the number of versions to retain (1–10). Check debug logs to confirm how many versions were deleted."
+    }
+  ]
+}

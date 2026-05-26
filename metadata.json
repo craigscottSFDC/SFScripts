@@ -1,0 +1,18 @@
+{
+  "scripts/example/hello.cls": {
+    "tags": ["apex", "example"],
+    "description": "A simple hello world Apex class"
+  },
+  "scripts/copado/promotion-user-story-progress.soql": {
+    "tags": ["soql", "copado", "promotion", "merge-conflict", "user-story"],
+    "description": "Lists user stories in a promotion ordered by commit date — use to track progress through merge conflicts"
+  },
+  "scripts/copado/find-user-stories-by-component.soql": {
+    "tags": ["soql", "copado", "user-story", "metadata"],
+    "description": "Find all Copado user stories that include a given component by its metadata API name"
+  },
+  "scripts/user-management/reset-user-permissions.cls": {
+    "tags": ["apex", "user-management", "permissions", "profile", "permission-set-group"],
+    "description": "Strips all permission set assignments from specified users, reassigns them to a reduced-access profile, then grants a single permission set group"
+  }
+}
