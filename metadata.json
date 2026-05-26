@@ -3,6 +3,14 @@
     "tags": ["apex", "example"],
     "description": "A simple hello world Apex class"
   },
+  "scripts/external-repos/SF-Developer-Permissions.md": {
+    "tags": ["permissions", "profile", "permission-set", "qa", "uat", "deployment"],
+    "description": "Metadata bundle for read-only developer access in QA/UAT environments — profile, permission set, permission set group, and muting permission set"
+  },
+  "scripts/external-repos/Salesforce-Deployment-Checklist.md": {
+    "tags": ["deployment", "checklist", "release", "lwc", "node", "release-management"],
+    "description": "Web-based deployment tracking tool with 8 phases and 48 checklist items — available as a Node.js app and Salesforce LWC"
+  },
   "scripts/ai-prompts/copado-cli-project-context.md": {
     "tags": ["ai-prompt", "copado", "cli", "devops", "salesforce-dx"],
     "description": "System prompt for Claude to act as a Copado CLI executor — handles auth, story syncing, merge conflict resolution, and self-healing validation loops"
