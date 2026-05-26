@@ -3,6 +3,10 @@
     "tags": ["apex", "example"],
     "description": "A simple hello world Apex class"
   },
+  "scripts/ai-prompts/copado-cli-project-context.md": {
+    "tags": ["ai-prompt", "copado", "cli", "devops", "salesforce-dx"],
+    "description": "System prompt for Claude to act as a Copado CLI executor — handles auth, story syncing, merge conflict resolution, and self-healing validation loops"
+  },
   "scripts/ai-prompts/technical-article-html-formatter.md": {
     "tags": ["ai-prompt", "html", "formatting", "content", "markdown"],
     "description": "System prompt for formatting technical articles into a specific HTML structure with section headers, banners, code blocks, and grammar fixes"
