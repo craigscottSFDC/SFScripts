@@ -12,7 +12,7 @@
       "cleanup",
       "maintenance"
     ],
-    "modified": "2026-05-26T18:32:36.916Z",
+    "modified": "2026-05-26T18:48:51.035Z",
     "steps": [
       {
         "file": "1_verify_stuck_jobs.soql",
@@ -21,7 +21,7 @@
         "extension": "soql",
         "content": "SELECT Id,\n       CronTriggerId,\n       JobType,\n       ApexClass.Name,\n       Status,\n       CronTrigger.CronJobDetail.Name\nFROM AsyncApexJob\nWHERE Status IN ('Queued', 'Holding', 'Preparing')\n  AND ApexClass.Name LIKE '<TargetClassName>'\nLIMIT 200\n",
         "size": 250,
-        "modified": "2026-05-26T18:32:36.916Z"
+        "modified": "2026-05-26T18:48:51.034Z"
       },
       {
         "file": "2_abort_stuck_jobs.cls",
@@ -30,7 +30,7 @@
         "extension": "cls",
         "content": "// Replace <TargetClassName> with the Apex class name to target (supports LIKE wildcards).\nString targetClassName = '<TargetClassName>';\n\nList<AsyncApexJob> waitingJobs = [\n    SELECT Id, CronTriggerId, JobType, ApexClass.Name\n    FROM AsyncApexJob\n    WHERE Status IN ('Queued', 'Holding', 'Preparing')\n      AND ApexClass.Name LIKE :targetClassName\n    LIMIT 200\n];\n\nfor (AsyncApexJob job : waitingJobs) {\n    try {\n        if (job.JobType == 'ScheduledApex') {\n            if (job.CronTriggerId != null) {\n                System.abortJob(job.CronTriggerId);\n            }\n        } else {\n            System.abortJob(job.Id);\n        }\n    } catch (Exception e) {\n        System.debug(LoggingLevel.ERROR, 'Failed to abort Job ' + job.Id + ' for class ' + job.ApexClass.Name + ': ' + e.getMessage());\n    }\n}\n",
         "size": 811,
-        "modified": "2026-05-26T18:32:36.916Z"
+        "modified": "2026-05-26T18:48:51.035Z"
       }
     ]
   },
@@ -46,7 +46,7 @@
       "maintenance",
       "flow-version"
     ],
-    "modified": "2026-05-26T18:32:36.917Z",
+    "modified": "2026-05-26T18:48:51.035Z",
     "steps": [
       {
         "file": "FlowVersionCleaner.cls",
@@ -55,7 +55,7 @@
         "extension": "cls",
         "content": "public class FlowVersionCleaner {\n\n    public static void cleanOldFlowVersions(Integer versionsToKeep) {\n        if (versionsToKeep < 1 || versionsToKeep > 10) {\n            throw new IllegalArgumentException('Please keep between 1 and 10 versions.');\n        }\n\n        // Get all flow definitions\n        List<FlowDefinition> allFlowDefs = [\n            SELECT Id, DeveloperName\n            FROM FlowDefinition\n            WHERE ManageableState = 'unmanaged'\n        ];\n\n        List<Flow> flowsToDelete = new List<Flow>();\n\n        for (FlowDefinition def : allFlowDefs) {\n            List<FlowVersionView> versions = [\n                SELECT Id, Status, VersionNumber, DefinitionId\n                FROM FlowVersionView\n                WHERE DefinitionId = :def.Id\n                ORDER BY VersionNumber DESC\n            ];\n\n            // Retain the top X versions, skip active versions in the remainder\n            List<FlowVersionView> oldVersions = versions.size() > versionsToKeep\n                ? versions.subList(versionsToKeep, versions.size())\n                : new List<FlowVersionView>();\n\n            for (FlowVersionView oldVersion : oldVersions) {\n                if (oldVersion.Status != 'Active') {\n                    flowsToDelete.add(new Flow(Id = oldVersion.Id));\n                }\n            }\n        }\n\n        if (!flowsToDelete.isEmpty()) {\n            try {\n                delete flowsToDelete;\n                System.debug('Deleted ' + flowsToDelete.size() + ' old flow versions.');\n            } catch (Exception e) {\n                System.debug('Error deleting flows: ' + e.getMessage());\n            }\n        } else {\n            System.debug('No flow versions to delete.');\n        }\n    }\n}\n",
         "size": 1731,
-        "modified": "2026-05-26T18:32:36.917Z"
+        "modified": "2026-05-26T18:48:51.035Z"
       },
       {
         "file": "RunFlowVersionCleaner.cls",
@@ -64,7 +64,7 @@
         "extension": "cls",
         "content": "// Anonymous Apex — deploy FlowVersionCleaner to org before running.\n// Change the argument to the number of recent versions you want to retain (1–10).\nFlowVersionCleaner.cleanOldFlowVersions(3);\n",
         "size": 200,
-        "modified": "2026-05-26T18:32:36.917Z"
+        "modified": "2026-05-26T18:48:51.035Z"
       }
     ]
   },
@@ -80,7 +80,7 @@
       "sf-cli",
       "sandbox"
     ],
-    "modified": "2026-05-26T18:32:36.917Z",
+    "modified": "2026-05-26T18:48:51.035Z",
     "steps": [
       {
         "file": "1_list_installed_packages.sh",
@@ -89,7 +89,7 @@
         "extension": "sh",
         "content": "sf package installed list --target-org <OrgAlias>\n",
         "size": 50,
-        "modified": "2026-05-26T18:32:36.917Z"
+        "modified": "2026-05-26T18:48:51.035Z"
       },
       {
         "file": "2_install_package_cli.sh",
@@ -98,7 +98,7 @@
         "extension": "sh",
         "content": "sf package install --package <PackageVersionId> --target-org <OrgAlias> --apex-compile package --wait 10\n",
         "size": 105,
-        "modified": "2026-05-26T18:32:36.917Z"
+        "modified": "2026-05-26T18:48:51.035Z"
       },
       {
         "file": "3_install_package_url.txt",
@@ -107,7 +107,7 @@
         "extension": "txt",
         "content": "packaging/installPackage.apexp?p0=<PackageVersionId>\n",
         "size": 53,
-        "modified": "2026-05-26T18:32:36.917Z"
+        "modified": "2026-05-26T18:48:51.035Z"
       }
     ]
   },
@@ -118,7 +118,7 @@
     "extension": "md",
     "content": "# Technical Article HTML Formatter — System Instructions\n\nPlease act as a technical content formatter. Your task is to wrap the provided article text into a specific HTML structure. **Fix spelling and grammar** (e.g., \"dont\" → \"don't\", subject-verb agreement, punctuation) as you format; the core content, technical terms, and instructions must remain unchanged.\n\n---\n\n## Document Structure\n\n**Standalone HTML document:** Include full document wrapper with `<!DOCTYPE html>`, `<html>`, `<head>`, `<body>`, and Roboto Mono font link. Use `body` style: `font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6;`\n\n**Fragment only:** If the output will be embedded in another page, omit the document wrapper and output only the content blocks.\n\n---\n\n## Formatting Rules (Apply in Order)\n\n### 1. Page Title (Standalone Only)\n\nUse `<h1 style=\"font-family: Arial, sans-serif; color: #2c3e50; margin-bottom: 30px;\">` for the article title.\n\n### 2. Section Headers (h2)\n\n**First section** (no `<hr>` before it):\n```html\n<h2 style=\"margin-top: 10pt; margin-bottom: 12pt; font-family: Arial, sans-serif; color: #ffffff; background-color: #2c3e50; padding: 10px 15px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px;\">\n  <strong><span style=\"font-size: 19pt;\">Section Title</span></strong>\n</h2>\n```\n\n**All subsequent sections** (after an `<hr>`):\n```html\n<h2 style=\"margin-top: 0pt; margin-bottom: 12pt; font-family: Arial, sans-serif; color: #ffffff; background-color: #2c3e50; padding: 10px 15px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px;\">\n  <strong><span style=\"font-size: 19pt;\">Section Title</span></strong>\n</h2>\n```\n\n### 3. Sub-section Headers (h3)\n\nUse for subsections within an h2:\n```html\n<h3 style=\"margin-top: 16pt; margin-bottom: 8pt;\">Sub-section Title</h3>\n```\nFor subsections that follow another h3, use `margin-top: 20pt` instead of `16pt`.\n\n### 4. Scenario / Context / Overview Banners\n\nUse for contextual callouts (scenarios, overviews, configuration notes, execution steps, remediation, etc.). Choose the label that fits the content:\n\n| Label | Use When |\n|-------|----------|\n| 🔍 Overview | Introduction or high-level summary |\n| 🔍 Scenario | Use case or situational context |\n| 🔍 Configuration | Setup or config instructions |\n| 🔍 Execution | How to run or use something |\n| 🔍 Remediation | Fixing issues or applying changes |\n| 🔍 Alternative Engine | Alternative approach or tool |\n\n**Banner template:**\n```html\n<div style=\"margin-top: 0pt; margin-bottom: 15pt; background: #ebf3f9; padding: 15px; border-left: 6px solid #0070d2; border-radius: 0 4px 4px 0; font-family: Arial, sans-serif;\">\n  <span style=\"font-size: 13pt; color: #004a87; display: block; margin-bottom: 4pt; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;\">🔍 Label</span>\n  <p style=\"margin: 0; font-size: 11.5pt; color: #333333; line-height: 1.4;\">Content text here.</p>\n</div>\n```\n\n### 5. Code / Prompt Blocks\n\n**Single-line prompts or short snippets:** Use `<span>` inside the div.\n```html\n<div style=\"background-color: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 14px; margin-left: 10pt;\">\n    <span style=\"font-size: 10.5pt; font-family: 'Roboto Mono', monospace; color: #188038;\">Your prompt or code here</span>\n</div>\n```\n\n**Multi-line code blocks:** Use `<pre>` inside the div. Add `min-height: 100px` (or `200px` for long blocks) to the div.\n```html\n<div style=\"background-color: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 14px; margin-left: 10pt; min-height: 100px;\">\n  <pre style=\"font-size: 10.5pt; font-family: 'Roboto Mono', monospace; color: #188038; line-height: 1.5; margin: 0;\">[code content]</pre>\n</div>\n```\n\n**Multiple consecutive prompts:** Add `margin-top: 8px` to each div after the first.\n\n### 6. Bulleted Lists\n\nUse for structured lists (steps, options, checklist items):\n```html\n<ul style=\"margin-bottom: 0px; padding-inline-start: 24px; list-style-type: none;\">\n  <li style=\"margin-bottom: 14pt; font-family: Arial, sans-serif; font-size: 11pt;\"><strong>🎯 Purpose:</strong> Description.</li>\n  <li style=\"margin-bottom: 10pt; margin-left: 20pt; font-family: Arial, sans-serif; font-size: 11pt;\">Nested item</li>\n</ul>\n```\n\n**List item emoji conventions:**\n- 🎯 Purpose / Objective / Goal\n- 💡 Rule Content / Prompt / Example\n- 🧪 Test / Validation\n- 🚀 Run / Execute\n- ⚙️ Setup / Configuration\n- ✅ Expected Outcome / Result\n\n### 7. Section Separators\n\nPlace `<hr>` **between** major sections (h2 blocks), but **never** before the first section.\n```html\n<hr style=\"border: 0; height: 2px; background: #333; margin-top: 40pt; margin-bottom: 20pt;\">\n```\n\n### 8. Image Placeholders\n\nReplace images with:\n```html\n<div style=\"margin: 20px 0; padding: 20px;\">\n  [IMAGE PLACEHOLDER: Description]\n</div>\n```\nOr inline: `[IMAGE PLACEHOLDER: Description]`\n\n### 9. Complex Code Placeholders\n\nWhen actual code is too long or not provided, use:\n`[INSERT CODE: {Description}]`\n\n---\n\n## Constraints\n\n- **Do NOT summarize** the text. Preserve all content.\n- **Do NOT change** Salesforce-specific terminology (e.g., FLS, CRUD, Apex, SOQL, DML, governor limits).\n- **Do NOT use** Markdown tables; use bulleted lists instead.\n- **Include** Roboto Mono font in `<head>` for standalone documents:\n  ```html\n  <link href=\"https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap\" rel=\"stylesheet\">\n  ```\n\n---\n\n## Output Checklist\n\nBefore finalizing, verify:\n\n- [ ] First h2 has `margin-top: 10pt`; all others have `margin-top: 0pt`\n- [ ] Every h2 contains `<strong><span style=\"font-size: 19pt;\">...</span></strong>`\n- [ ] Banners use the full template (label span + content `<p>`)\n- [ ] Code blocks use `font-size: 10.5pt` and `color: #188038`\n- [ ] Multi-line `<pre>` blocks include `white-space: pre-wrap; word-wrap: break-word` for text wrapping\n- [ ] No `<hr>` before the first section\n- [ ] Technical terms preserved exactly\n\n---\n\n## Article Content to Format\n\n[INSERT ARTICLE CONTENT HERE]\n",
     "size": 6098,
-    "modified": "2026-05-26T18:47:18.363Z",
+    "modified": "2026-05-26T18:48:51.034Z",
     "tags": [
       "ai-prompt",
       "html",
@@ -135,7 +135,7 @@
     "extension": "soql",
     "content": "SELECT copado__User_Story__r.Id,\n       copado__User_Story__r.Name,\n       copado__User_Story__r.copado__Environment__r.Name,\n       copado__User_Story__r.copado__Latest_Commit_Date__c\nFROM copado__User_Story_Metadata__c\nWHERE copado__Metadata_API_Name__c LIKE '%<MetadataAPIName>%'\n  AND copado__User_Story__r.RecordType.Name != 'Utility'\n",
     "size": 340,
-    "modified": "2026-05-26T18:32:36.916Z",
+    "modified": "2026-05-26T18:48:51.035Z",
     "tags": [
       "soql",
       "copado",
@@ -151,7 +151,7 @@
     "extension": "soql",
     "content": "SELECT copado__User_Story__r.Name,\n       copado__User_Story__r.copado__Latest_Commit_Date__c\nFROM copado__Promoted_User_Story__c\nWHERE copado__Promotion__r.Name = '<PromotionName>'\nORDER BY copado__User_Story__r.copado__Latest_Commit_Date__c ASC\n",
     "size": 247,
-    "modified": "2026-05-26T18:32:36.917Z",
+    "modified": "2026-05-26T18:48:51.035Z",
     "tags": [
       "soql",
       "copado",
@@ -168,7 +168,7 @@
     "extension": "cls",
     "content": "// Removes all permission set assignments (non-profile) from the specified users,\n// reassigns them to a reduced-access profile, then assigns a single permission set group.\n// Update the three ID variables before running in Anonymous Apex.\n\nList<Id> userIds = new List<Id>{\n    '<userid>','<userid>','<userid>'\n};\n\nId profileId      = '<profile id to be assigned>';\nId permSetGroupId = '<permission set group id to be assigned>';\n\n// Step 1: delete all non-profile permission set assignments for these users\nList<PermissionSetAssignment> toDelete = [\n    SELECT Id, PermissionSet.IsOwnedByProfile\n    FROM PermissionSetAssignment\n    WHERE AssigneeId IN :userIds\n];\n\nList<PermissionSetAssignment> safeToDelete = new List<PermissionSetAssignment>();\nfor (PermissionSetAssignment psa : toDelete) {\n    if (!psa.PermissionSet.IsOwnedByProfile) {\n        safeToDelete.add(psa);\n    }\n}\ndelete safeToDelete;\n\n// Step 2: reassign users to the reduced-access profile\nList<User> usersToUpdate = [SELECT Id, ProfileId FROM User WHERE Id IN :userIds];\nfor (User u : usersToUpdate) {\n    u.ProfileId = profileId;\n}\nupdate usersToUpdate;\n\n// Step 3: assign the reduced-access permission set group\nList<PermissionSetAssignment> toInsert = new List<PermissionSetAssignment>();\nfor (Id uid : userIds) {\n    toInsert.add(new PermissionSetAssignment(\n        AssigneeId          = uid,\n        PermissionSetGroupId = permSetGroupId\n    ));\n}\ninsert toInsert;\n",
     "size": 1442,
-    "modified": "2026-05-26T18:32:36.917Z",
+    "modified": "2026-05-26T18:48:51.035Z",
     "tags": [
       "apex",
       "user-management",
