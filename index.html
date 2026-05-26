@@ -152,6 +152,70 @@
     box-shadow: var(--glow-cyan);
   }
 
+  /* ---- Filter dropdowns ---- */
+  .filter-dropdown { position: relative; }
+
+  .dropdown-btn {
+    background: transparent;
+    border: 1px solid var(--border-hi);
+    border-radius: 999px;
+    padding: 3px 11px;
+    font-size: 0.75rem;
+    font-family: inherit;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .dropdown-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .dropdown-btn.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent-bright);
+    box-shadow: 0 0 8px rgba(30,127,255,0.25);
+  }
+  .dropdown-btn .chevron { font-size: 0.6rem; transition: transform 0.15s; line-height: 1; }
+  .dropdown-btn.open .chevron { transform: rotate(180deg); }
+
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 170px;
+    background: var(--surface2);
+    border: 1px solid var(--border-hi);
+    border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,212,255,0.05);
+    z-index: 200;
+    overflow: hidden;
+  }
+  .dropdown-menu.open { display: block; }
+
+  .dropdown-option {
+    padding: 7px 14px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: background 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+  }
+  .dropdown-option:hover { background: var(--surface); color: var(--text); }
+  .dropdown-option.selected { color: var(--accent-bright); background: var(--accent-dim); }
+  .dropdown-option.clear-opt {
+    color: var(--muted);
+    font-style: italic;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+  }
+  .dropdown-option.clear-opt.selected { color: var(--muted); background: transparent; }
+
   /* ---- Layout ---- */
   #main { display: flex; flex: 1; overflow: hidden; }
 
@@ -417,8 +481,12 @@
 </header>
 
 <div id="filter-bar">
-  <span class="chip active" data-ext="" data-type="all">All</span>
-  <span class="chip bundle-chip" data-type="bundle">&#128230; Bundles</span>
+  <span class="chip active" data-filter="all">All</span>
+  <span class="chip bundle-chip" data-filter="bundle">&#9741; Bundles</span>
+  <div class="filter-dropdown" id="tag-dropdown">
+    <button class="dropdown-btn" id="tag-dropdown-btn">Tag <span class="chevron">&#9660;</span></button>
+    <div class="dropdown-menu" id="tag-dropdown-menu"></div>
+  </div>
 </div>
 
 <div id="main">
@@ -477,7 +545,8 @@
 let ALL_ENTRIES = [];
 let filtered = [];
 let selectedIndex = -1;
-let activeFilter = 'all'; // 'all' | 'bundle' | ext string
+let activeFilter = 'all'; // 'all' | 'bundle'
+let activeTag = '';       // '' | tag string
 let activeStepIndex = 0;
 
 const EXT_LANG = {
@@ -511,30 +580,88 @@ function formatSize(bytes) {
 }
 
 function buildFilterBar(entries) {
-  const exts = [...new Set(
-    entries.filter(e => e.type === 'file').map(e => e.extension)
-  )].sort();
-
-  const bar = document.getElementById('filter-bar');
-  bar.innerHTML = `
-    <span class="chip active" data-filter="all">All</span>
-    <span class="chip bundle-chip" data-filter="bundle">&#128230; Bundles</span>
-  `;
-  for (const ext of exts) {
-    const chip = document.createElement('span');
-    chip.className = 'chip';
-    chip.dataset.filter = 'ext:' + ext;
-    chip.textContent = '.' + (ext || 'no ext');
-    bar.appendChild(chip);
-  }
-  bar.addEventListener('click', e => {
+  // All / Bundles chips
+  document.getElementById('filter-bar').addEventListener('click', e => {
     const chip = e.target.closest('.chip');
     if (!chip) return;
-    bar.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#filter-bar .chip').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
     activeFilter = chip.dataset.filter;
+    activeExt = '';
+    activeTag = '';
+    updateDropdownBtns();
     applySearch();
   });
+
+  // Build Tag dropdown
+  const tags = [...new Set(
+    entries.flatMap(e => e.tags)
+  )].sort();
+  buildDropdown({
+    menuId: 'tag-dropdown-menu',
+    btnId:  'tag-dropdown-btn',
+    label:  'Tag',
+    options: tags.map(t => ({ value: t, text: t })),
+    getActive: () => activeTag,
+    onSelect: val => {
+      activeTag = val;
+      activeFilter = '';
+      document.querySelectorAll('#filter-bar .chip').forEach(c => c.classList.remove('active'));
+      updateDropdownBtns();
+      applySearch();
+    },
+  });
+}
+
+function buildDropdown({ menuId, btnId, label, options, getActive, onSelect }) {
+  const btn  = document.getElementById(btnId);
+  const menu = document.getElementById(menuId);
+
+  function renderMenu() {
+    const current = getActive();
+    menu.innerHTML = '';
+    const clearOpt = document.createElement('div');
+    clearOpt.className = 'dropdown-option clear-opt' + (current === '' ? ' selected' : '');
+    clearOpt.textContent = 'All ' + label + 's';
+    clearOpt.addEventListener('click', () => { closeMenu(); onSelect(''); });
+    menu.appendChild(clearOpt);
+
+    for (const { value, text } of options) {
+      const opt = document.createElement('div');
+      opt.className = 'dropdown-option' + (current === value ? ' selected' : '');
+      opt.textContent = text;
+      opt.addEventListener('click', () => { closeMenu(); onSelect(value); });
+      menu.appendChild(opt);
+    }
+  }
+
+  function openMenu() {
+    renderMenu();
+    menu.classList.add('open');
+    btn.classList.add('open');
+    setTimeout(() => document.addEventListener('click', outsideClick), 0);
+  }
+
+  function closeMenu() {
+    menu.classList.remove('open');
+    btn.classList.remove('open');
+    document.removeEventListener('click', outsideClick);
+  }
+
+  function outsideClick(e) {
+    if (!btn.closest('.filter-dropdown').contains(e.target)) closeMenu();
+  }
+
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    menu.classList.contains('open') ? closeMenu() : openMenu();
+  });
+}
+
+function updateDropdownBtns() {
+  const tagBtn = document.getElementById('tag-dropdown-btn');
+  tagBtn.classList.toggle('active', !!activeTag);
+  tagBtn.childNodes[0].textContent = activeTag ? activeTag + ' ' : 'Tag ';
 }
 
 function tokenize(text) { return text.toLowerCase().split(/\s+/).filter(Boolean); }
@@ -592,10 +719,9 @@ function applySearch() {
 
   filtered = ALL_ENTRIES
     .filter(e => {
-      if (activeFilter === 'all') return true;
       if (activeFilter === 'bundle') return e.type === 'bundle';
-      if (activeFilter.startsWith('ext:')) return e.type === 'file' && e.extension === activeFilter.slice(4);
-      return true;
+      if (activeTag) return e.tags.includes(activeTag);
+      return true; // 'all' or no filter
     })
     .map(e => ({ entry: e, score: scoreEntry(e, query) }))
     .filter(x => x.score > 0)
