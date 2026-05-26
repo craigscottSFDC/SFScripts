@@ -30,12 +30,13 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { overflow: hidden; max-width: 100%; }
 
   body {
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     background: var(--bg);
     color: var(--text);
-    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -52,6 +53,7 @@
     gap: 14px;
     flex-shrink: 0;
     position: relative;
+    overflow: hidden;
   }
   /* thin cyan glow line at very bottom of header */
   header::after {
@@ -100,7 +102,7 @@
   }
   #search-box:focus {
     border-color: var(--accent-bright);
-    box-shadow: var(--glow-cyan);
+    box-shadow: 0 0 8px rgba(0,212,255,0.3);
   }
   #search-box::placeholder { color: var(--muted); }
 
@@ -186,13 +188,17 @@
     top: calc(100% + 6px);
     left: 0;
     min-width: 170px;
+    max-height: 260px;
+    overflow-y: auto;
     background: var(--surface2);
     border: 1px solid var(--border-hi);
     border-radius: 8px;
     box-shadow: 0 8px 28px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,212,255,0.05);
     z-index: 200;
-    overflow: hidden;
   }
+  .dropdown-menu::-webkit-scrollbar { width: 4px; }
+  .dropdown-menu::-webkit-scrollbar-track { background: transparent; }
+  .dropdown-menu::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
   .dropdown-menu.open { display: block; }
 
   .dropdown-option {
@@ -217,7 +223,7 @@
   .dropdown-option.clear-opt.selected { color: var(--muted); background: transparent; }
 
   /* ---- Layout ---- */
-  #main { display: flex; flex: 1; overflow: hidden; }
+  #main { display: flex; flex: 1; overflow: hidden; min-width: 0; max-width: 100%; }
 
   /* ---- Results panel ---- */
   #results-panel {
@@ -226,6 +232,7 @@
     border-right: 1px solid var(--border);
     background: var(--surface);
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 6px 0;
   }
   #results-panel::-webkit-scrollbar { width: 4px; }
@@ -235,15 +242,15 @@
   .result-item {
     padding: 9px 14px;
     cursor: pointer;
-    border-left: 2px solid transparent;
-    transition: background 0.1s, border-color 0.1s;
+    box-shadow: inset 2px 0 0 transparent;
+    transition: background 0.1s, box-shadow 0.1s;
   }
   .result-item:hover { background: var(--surface2); }
   .result-item.selected {
     background: var(--surface2);
-    border-left-color: var(--accent-bright);
+    box-shadow: inset 2px 0 0 var(--accent-bright);
   }
-  .result-item.bundle-item.selected { border-left-color: var(--cyan); }
+  .result-item.bundle-item.selected { box-shadow: inset 2px 0 0 var(--cyan); }
 
   .result-name {
     font-size: 0.875rem;
@@ -301,7 +308,7 @@
   }
 
   /* ---- Detail panel ---- */
-  #detail-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+  #detail-panel { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
 
   #empty-state {
     flex: 1;
@@ -329,9 +336,11 @@
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
+    min-width: 0;
+    overflow: hidden;
   }
-  .detail-title { font-size: 0.95rem; font-weight: 600; flex: 1; color: var(--text); }
-  .detail-meta { font-size: 0.75rem; color: var(--muted); }
+  .detail-title { font-size: 0.95rem; font-weight: 600; flex: 1; min-width: 0; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .detail-meta { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 
   .copy-btn {
     background: transparent;
@@ -371,16 +380,16 @@
   .detail-desc { font-size: 0.78rem; color: var(--text-dim); font-style: italic; opacity: 0.8; }
 
   /* ---- File detail ---- */
-  #file-detail { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+  #file-detail { display: none; flex-direction: column; flex: 1; overflow: hidden; min-width: 0; }
 
   #code-wrap { flex: 1; overflow: auto; background: var(--bg); }
   #code-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
   #code-wrap::-webkit-scrollbar-track { background: transparent; }
   #code-wrap::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
-  pre#code-block { margin: 0; padding: 18px; font-size: 0.84rem; line-height: 1.6; tab-size: 4; min-height: 100%; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
+  pre#code-block { margin: 0; padding: 28px 32px; font-size: 0.84rem; line-height: 1.6; tab-size: 4; min-height: 100%; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; min-width: 0; }
 
   /* ---- Bundle detail ---- */
-  #bundle-detail { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+  #bundle-detail { display: none; flex-direction: column; flex: 1; overflow: hidden; min-width: 0; }
 
   /* Step tabs */
   #step-tabs {
@@ -435,6 +444,9 @@
     border-left: 3px solid rgba(0,212,255,0.4);
     flex-shrink: 0;
     line-height: 1.55;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
   }
   #step-note:empty { display: none; }
 
@@ -442,7 +454,7 @@
   #step-code-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
   #step-code-wrap::-webkit-scrollbar-track { background: transparent; }
   #step-code-wrap::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
-  pre#step-code-block { margin: 0; padding: 18px; font-size: 0.84rem; line-height: 1.6; tab-size: 4; min-height: 100%; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
+  pre#step-code-block { margin: 0; padding: 28px 32px; font-size: 0.84rem; line-height: 1.6; tab-size: 4; min-height: 100%; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; min-width: 0; }
 
   /* misc */
   #no-results { padding: 24px 16px; color: var(--muted); font-size: 0.85rem; text-align: center; }
@@ -466,6 +478,89 @@
   .ext-sh      { background: rgba(0,100,80,0.2);   color: #34d399; border: 1px solid rgba(0,100,80,0.3); }
   .ext-md      { background: rgba(60,80,180,0.2);  color: #a5b4fc; border: 1px solid rgba(60,80,180,0.3); }
   .ext-        { background: rgba(30,60,90,0.3);   color: #7aa8c8; border: 1px solid rgba(30,60,90,0.5); }
+
+  /* ---- Back button (mobile only) ---- */
+  #back-btn, #back-btn-bundle {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--border-hi);
+    border-radius: 6px;
+    color: var(--accent-bright);
+    font-family: inherit;
+    font-size: 0.8rem;
+    padding: 5px 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  #back-btn:active, #back-btn-bundle:active { background: var(--accent-dim); }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 700px) {
+    /* Shrink header */
+    header { padding: 6px 12px; gap: 10px; }
+    .header-logo { height: 48px; width: 48px; }
+    .header-title { font-size: 1rem; }
+    #count { display: none; }
+
+    /* Filter bar wraps tightly */
+    #filter-bar { padding: 6px 12px; }
+
+    /* Single-column layout: panels stack, only one visible at a time */
+    #main { position: relative; overflow: hidden; }
+    #results-panel {
+      width: 100%;
+      border-right: none;
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      transition: transform 0.25s ease;
+      overflow-x: hidden;
+    }
+    #detail-panel {
+      width: 100%;
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      overflow-x: hidden;
+    }
+    /* When detail is shown, slide results out and detail in */
+    #main.show-detail #results-panel { transform: translateX(-100%); }
+    #main.show-detail #detail-panel  { transform: translateX(0); }
+
+    /* Back buttons visible on mobile */
+    #back-btn, #back-btn-bundle { display: flex; }
+
+    /* Inject back btn into detail headers */
+    .detail-header-row { flex-wrap: wrap; gap: 8px; }
+    .detail-title { font-size: 0.875rem; }
+    .detail-meta { font-size: 0.7rem; width: 100%; order: 3; }
+
+    /* Step tabs scroll naturally */
+    #step-tabs { -webkit-overflow-scrolling: touch; }
+
+    /* Code blocks don't force wide scroll on small screens */
+    pre#code-block, pre#step-code-block {
+      font-size: 0.78rem;
+      padding: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Dropdown menu full-width on mobile */
+    .dropdown-menu { min-width: 140px; }
+
+    /* Result items slightly more padding for touch */
+    .result-item { padding: 11px 14px; }
+  }
+
+  @media (max-width: 400px) {
+    .header-title { display: none; }
+    #search-box { font-size: 0.85rem; }
+  }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
 </head>
@@ -506,6 +601,7 @@
     <!-- Single-file detail -->
     <div id="file-detail">
       <div class="detail-header-row">
+        <button id="back-btn" onclick="showResults()">&#8592; Back</button>
         <span id="file-title" class="detail-title"></span>
         <span id="file-meta" class="detail-meta"></span>
         <button class="copy-btn" id="file-copy-btn">Copy</button>
@@ -519,6 +615,7 @@
     <!-- Bundle detail -->
     <div id="bundle-detail">
       <div class="detail-header-row">
+        <button id="back-btn-bundle" class="back-btn-el" onclick="showResults()">&#8592; Back</button>
         <span id="bundle-title" class="detail-title"></span>
         <span id="bundle-meta" class="detail-meta"></span>
       </div>
@@ -792,6 +889,7 @@ function showFile(file) {
   document.getElementById('bundle-detail').style.display = 'none';
   const fd = document.getElementById('file-detail');
   fd.style.display = 'flex';
+  showDetail();
 
   document.getElementById('file-title').textContent = file.name;
   document.getElementById('file-meta').textContent =
@@ -836,6 +934,7 @@ function showBundle(bundle) {
   document.getElementById('file-detail').style.display = 'none';
   const bd = document.getElementById('bundle-detail');
   bd.style.display = 'flex';
+  showDetail();
 
   document.getElementById('bundle-title').textContent = bundle.name;
   document.getElementById('bundle-meta').textContent =
@@ -907,6 +1006,14 @@ function clearDetail() {
   document.getElementById('empty-state').style.display = 'flex';
   document.getElementById('file-detail').style.display = 'none';
   document.getElementById('bundle-detail').style.display = 'none';
+}
+
+function showDetail() {
+  document.getElementById('main').classList.add('show-detail');
+}
+
+function showResults() {
+  document.getElementById('main').classList.remove('show-detail');
 }
 
 // Keyboard nav
