@@ -3,6 +3,10 @@
     "tags": ["apex", "example"],
     "description": "A simple hello world Apex class"
   },
+  "scripts/ai-prompts/technical-article-html-formatter.md": {
+    "tags": ["ai-prompt", "html", "formatting", "content", "markdown"],
+    "description": "System prompt for formatting technical articles into a specific HTML structure with section headers, banners, code blocks, and grammar fixes"
+  },
   "scripts/copado/promotion-user-story-progress.soql": {
     "tags": ["soql", "copado", "promotion", "merge-conflict", "user-story"],
     "description": "Lists user stories in a promotion ordered by commit date — use to track progress through merge conflicts"
