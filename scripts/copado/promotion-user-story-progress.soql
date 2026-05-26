@@ -1,0 +1,5 @@
+SELECT copado__User_Story__r.Name,
+       copado__User_Story__r.copado__Latest_Commit_Date__c
+FROM copado__Promoted_User_Story__c
+WHERE copado__Promotion__r.Name = '<PromotionName>'
+ORDER BY copado__User_Story__r.copado__Latest_Commit_Date__c ASC

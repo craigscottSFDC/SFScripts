@@ -1,0 +1,17 @@
+{
+  "title": "Stuck Apex Job Cleaner",
+  "description": "Identifies and aborts Apex jobs stuck in Queued, Holding, or Preparing status for a given class name.",
+  "tags": ["apex", "async", "jobs", "scheduler", "cleanup", "maintenance"],
+  "steps": [
+    {
+      "file": "1_verify_stuck_jobs.soql",
+      "label": "1. Verify Stuck Jobs",
+      "note": "Replace <TargetClassName> with the Apex class name to target. Review the results before aborting — confirm the job count and types look correct."
+    },
+    {
+      "file": "2_abort_stuck_jobs.cls",
+      "label": "2. Abort Jobs (Anonymous Apex)",
+      "note": "Replace <TargetClassName> with the same class name used in step 1. Supports LIKE wildcards (e.g. '%MyClass%'). Run in Anonymous Apex and check debug logs for any abort failures."
+    }
+  ]
+}

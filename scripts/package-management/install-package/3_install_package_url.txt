@@ -1,0 +1,1 @@
+packaging/installPackage.apexp?p0=<PackageVersionId>

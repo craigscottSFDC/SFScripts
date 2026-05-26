@@ -1,0 +1,22 @@
+{
+  "title": "Install a Package into an Org",
+  "description": "Retrieve installed packages to find the 04t Package Version ID, then reinstall via CLI or browser URL.",
+  "tags": ["cli", "package", "install", "sf-cli", "sandbox"],
+  "steps": [
+    {
+      "file": "1_list_installed_packages.sh",
+      "label": "1. List Installed Packages",
+      "note": "Replace <OrgAlias> with your org alias (e.g. my-sandbox). This outputs a table of all installed packages — look for the Package Version ID column, which starts with 04t."
+    },
+    {
+      "file": "2_install_package_cli.sh",
+      "label": "2. Install via CLI",
+      "note": "Replace <PackageVersionId> with the 04t ID from step 1 and <OrgAlias> with your org alias. The --apex-compile package flag is important — it prevents compile errors that occur when using the default 'all' setting."
+    },
+    {
+      "file": "3_install_package_url.txt",
+      "label": "3. Install via Browser URL",
+      "note": "Alternative to the CLI. Paste this path after your org's .com/ in the browser. Replace <PackageVersionId> with the 04t ID. IMPORTANT: under Advanced Settings, make sure Apex Compile is set to 'Package only' — this is the browser equivalent of --apex-compile package and resolves compile errors on install."
+    }
+  ]
+}
