@@ -1,0 +1,12 @@
+{
+  "title": "Copado User Story Force Promotion",
+  "description": "Forces a list of User Stories into a Copado Promotion by directly inserting Promoted User Story junction records.",
+  "tags": ["copado", "promotion", "user-story", "apex"],
+  "steps": [
+    {
+      "file": "1_force_stories_into_promotion.cls",
+      "label": "1. Force Stories into Promotion (Anonymous Apex)",
+      "note": "Replace <PromotionId> with the target Promotion ID and populate <UserStoryId1>, <UserStoryId2>, etc. with the User Story IDs to force in. Run in Anonymous Apex and check debug logs to confirm insertion."
+    }
+  ]
+}
