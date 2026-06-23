@@ -9,9 +9,14 @@
       "note": "Deploy this class to the org first via VS Code or the Developer Console before running step 2."
     },
     {
+      "file": "FlowVersionCleanerTest.cls",
+      "label": "2. Apex Test Class",
+      "note": "Deploy alongside the main class. Run via the Apex Test Execution page or VS Code to verify coverage before using in production."
+    },
+    {
       "file": "RunFlowVersionCleaner.cls",
-      "label": "2. Run (Anonymous Apex)",
-      "note": "Execute in Anonymous Apex. Change the argument to the number of versions to retain (1–10). Check debug logs to confirm how many versions were deleted."
+      "label": "3. Run (Anonymous Apex)",
+      "note": "Execute in Anonymous Apex. Change the argument to the number of versions to retain. Check debug logs to confirm how many versions were deleted."
     }
   ]
 }
